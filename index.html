@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Notebook Viewer URL Converter</title>
+  <style>
+    :root {
+      --bg: #f6f8fa;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #656d76;
+      --border: #d0d7de;
+      --primary: #0969da;
+      --primary-hover: #0550ae;
+      --success: #1a7f37;
+      --danger: #cf222e;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0 3px 12px rgba(31, 35, 40, 0.06);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+
+    p.subtitle {
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.15);
+    }
+
+    button {
+      padding: 0.65rem 1.2rem;
+      background-color: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    button.secondary {
+      background-color: #f6f8fa;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.75rem;
+      font-size: 0.82rem;
+    }
+
+    button.secondary:hover {
+      background-color: #eaeef2;
+    }
+
+    .error {
+      color: var(--danger);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .results {
+      display: none;
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+
+    .result-block {
+      margin-bottom: 1.25rem;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .code-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+      font-size: 0.83rem;
+      word-break: break-all;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    a.open-link {
+      display: inline-block;
+      padding: 0.4rem 0.75rem;
+      background-color: var(--success);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    a.open-link:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GitHub Notebook Viewer Converter</h1>
+    <p class="subtitle">Paste a GitHub <code>.ipynb</code> blob URL to generate its hex-encoded <code>notebooks.githubusercontent.com</code> render link.</p>
+
+    <label for="githubUrl">GitHub Blob URL</label>
+    <div class="input-group">
+      <input
+        type="text"
+        id="githubUrl"
+        placeholder="https://github.com/username/repo/blob/commit_sha/path/to/notebook.ipynb"
+      />
+      <button onclick="convertUrl()">Convert</button>
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+
+    <div id="results" class="results">
+      <div class="result-block">
+        <div class="result-header">
+          <label>1. Raw GitHub URL</label>
+          <button class="secondary" onclick="copyText('rawOut', this)">Copy</button>
+        </div>
+        <div id="rawOut" class="code-box"></div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-header">
+          <label>2. Hex Encoded URL</label>
+          <button class="secondary" onclick="copyText('hexOut', this)">Copy</button>
+        </div>
+        <div id="hexOut" class="code-box"></div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-header">
+          <label>3. Final Notebook Viewer URL</label>
+          <div class="actions">
+            <button class="secondary" onclick="copyText('finalOut', this)">Copy</button>
+            <a id="openLink" class="open-link" href="#" target="_blank" rel="noopener noreferrer">Open Notebook ↗</a>
+          </div>
+        </div>
+        <div id="finalOut" class="code-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function stringToHex(str) {
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(str);
+      return Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    function convertUrl() {
+      const input = document.getElementById("githubUrl").value.trim();
+      const errorEl = document.getElementById("errorMsg");
+      const resultsEl = document.getElementById("results");
+
+      errorEl.style.display = "none";
+      resultsEl.style.display = "none";
+
+      let parsed;
+      try {
+        parsed = new URL(input);
+      } catch {
+        showError("Please enter a valid URL.");
+        return;
+      }
+
+      if (parsed.hostname !== "github.com") {
+        showError("URL must start with https://github.com/...");
+        return;
+      }
+
+      // Expected path: /username/repo/blob/commit_sha/path_to/notebook.ipynb
+      const parts = parsed.pathname.replace(/^\/+|\/+$/g, "").split("/");
+
+      if (parts.length < 5 || parts[2] !== "blob") {
+        showError("Invalid GitHub blob URL format. Expected: https://github.com/username/repo/blob/commit_sha/path/to/file.ipynb");
+        return;
+      }
+
+      const username = parts[0];
+      const repo = parts[1];
+      const commitSha = parts[3];
+      const filePath = parts.slice(4).join("/");
+
+      const rawUrl = `https://raw.githubusercontent.com/${username}/${repo}/${commitSha}/${filePath}`;
+      const hexUrl = stringToHex(rawUrl);
+      const nwo = `${username}/${repo}`;
+      const finalUrl = `https://notebooks.githubusercontent.com/view/ipynb?commit=${commitSha}&enc_url=${hexUrl}&nwo=${nwo}&path=${filePath}`;
+
+      document.getElementById("rawOut").textContent = rawUrl;
+      document.getElementById("hexOut").textContent = hexUrl;
+      document.getElementById("finalOut").textContent = finalUrl;
+      document.getElementById("openLink").href = finalUrl;
+
+      resultsEl.style.display = "block";
+    }
+
+    function showError(msg) {
+      const errorEl = document.getElementById("errorMsg");
+      errorEl.textContent = msg;
+      errorEl.style.display = "block";
+    }
+
+    function copyText(elementId, btn) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => (btn.textContent = original), 1500);
+      });
+    }
+
+    // Allow pressing Enter inside the input field
+    document.getElementById("githubUrl").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") convertUrl();
+    });
+  </script>
+</body>
+</html>
